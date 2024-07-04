@@ -7,7 +7,7 @@ source:
 	g++ -c glad/src/glad.c -o Debug/glad.o
 
 all: main source
-	cd Debug && g++ main.o camera.o shader.o stb.o texture.o glad.o -lglfw -lglm -lassimp -o SSAO.mirai
+	cd Debug && g++ main.o camera.o shader.o stb.o texture.o glad.o -lglfw -lassimp -o SSAO.mirai
 
 compile: all
 	cd Debug && rm main.o camera.o shader.o stb.o texture.o glad.o
