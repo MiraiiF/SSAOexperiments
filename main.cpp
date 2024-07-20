@@ -16,7 +16,6 @@ void up_down(GLFWwindow* janela, float* var, float val, int key_up, int key_down
 void camera_movement(GLFWwindow* janela, float velocity, Camera viewer, glm::vec3 *position);
 
 int main(void){
-    GLFWwindow* janela;
 
     if (!glfwInit()) {
 		printf("GLFW nono\n");
@@ -24,11 +23,10 @@ int main(void){
 	}
 
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
-	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
+	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 2);
 	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
-	glfwWindowHint(GLFW_SCALE_FRAMEBUFFER, 0);
 
-	janela = glfwCreateWindow(largura, altura, "Cabeludo", NULL, NULL);
+	GLFWwindow* janela = glfwCreateWindow(largura, altura, "Cabeludo", NULL, NULL);
 	if (!janela) {
 		printf("janela nao foi criada...\n");
 		glfwTerminate();

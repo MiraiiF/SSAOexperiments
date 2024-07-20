@@ -1,4 +1,4 @@
-#version 430 core
+#version 420 core
 out vec4 cores;
 in vec3 fragpos;
 in vec3 norm;
