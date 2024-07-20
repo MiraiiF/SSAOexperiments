@@ -50,8 +50,7 @@ in vec3 Normal;
 in vec2 TexCoords;
 
 uniform vec3 viewPos;
-
-uniform PointLight poin;
+uniform DirLight light;
 uniform Material material;
 
 // function prototypes
@@ -64,8 +63,7 @@ void main()
     vec3 norm = normalize(Normal);
     vec3 viewDir = normalize(viewPos - FragPos);
     
-    
-    vec3 result = CalcPointLight(poin, norm, FragPos, viewDir);   
+    vec3 result = CalcDirLight(light, norm, viewDir);   
     
     FragColor = vec4(result, 1.0);
 }
