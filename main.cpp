@@ -48,6 +48,7 @@ int main(void){
 	glfwSetInputMode(janela, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
 
 	Shader Modellight("../Shaders/AssimpExample.vert", "../Shaders/AssimpExample.frag");
+	Shader Shadow("../Shaders/Shadow.vert", "../Shaders/Shadow.frag");
 
 	glEnable(GL_DEPTH_TEST);
 
@@ -55,6 +56,38 @@ int main(void){
 	float angle_var = 0.0f;
 
 	double time = 0;
+	
+	//Shadow Map
+	unsigned int depthMapFBO;
+	glGenFramebuffers(1, &depthMapFBO);
+
+	const unsigned int SHADOW_WIDTH = 1024, SHADOW_HEIGHT = 1024;
+
+	unsigned int depthMap;
+	glGenTextures(1, &depthMap);
+	glBindTexture(GL_TEXTURE_2D, depthMap);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT, 
+             SHADOW_WIDTH, SHADOW_HEIGHT, 0, GL_DEPTH_COMPONENT, GL_FLOAT, NULL);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT); 	
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+
+	glBindFramebuffer(GL_FRAMEBUFFER, depthMapFBO);
+	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, depthMap, 0);
+	glDrawBuffer(GL_NONE);
+	glReadBuffer(GL_NONE);
+	glBindFramebuffer(GL_FRAMEBUFFER, 0);  
+
+	float near_plane = 0.1f, far_plane = 50.0f;
+	glm::mat4 lightProjection = glm::ortho(-35.0f, 35.0f, -35.0f, 35.0f, near_plane, far_plane);
+
+	Camera dir_light(glm::vec3( -0.2f, 1.0f, -0.3f) + glm::vec3(-2.0f, 4.0f, -1.0f), 
+					glm::vec3(-2.0f, 4.0f, -1.0f));
+	
+	glm::mat4 lightView = dir_light.view;
+
+	glm::mat4 lightSpaceMatrix = lightProjection * lightView;
 
 	Model parede("../models/parede/parede.obj");
 	Model lixo("../models/lixo/lixo.obj");
@@ -65,11 +98,45 @@ int main(void){
 
 	while (!glfwWindowShouldClose(janela))
 	{
-		callback_CloseWindow(janela);
-		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-		glm::mat4 projection = glm::mat4(1.0f);
-		glm::mat4 model = glm::mat4(1.0f);
 		
+		//Render Scene from Light Pespective
+		Shadow.use();
+		Shadow.setmat4("lightSpaceMatrix", lightSpaceMatrix);
+		
+		glViewport(0, 0, SHADOW_WIDTH, SHADOW_HEIGHT);
+		glBindFramebuffer(GL_FRAMEBUFFER, depthMapFBO);
+    	glClear(GL_DEPTH_BUFFER_BIT);
+		
+		glm::mat4 model = glm::mat4(1.0f);
+
+		model = glm::translate(model, glm::vec3(0.0f, 0.0f, -3.0f));
+		model = glm::scale(model, glm::vec3(1.0, 1.0, 1.0));
+
+		Shadow.setmat4("model", model);
+		parede.Draw(Shadow);
+
+		model = glm::mat4(1.0f);
+		model = glm::translate(model, glm::vec3(0.0f, 0.0f, -1.5f));
+		model = glm::rotate(model, glm::radians(270.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+		model = glm::scale(model, glm::vec3(0.5, 0.5, 0.5));
+
+		Shadow.setmat4("model", model);
+		lixo.Draw(Shadow);
+
+		model = glm::mat4(1.0f);
+		model = glm::translate(model, glm::vec3(0.0f, 0.0f, -1.5f));
+
+		Shadow.setmat4("model", model);
+		piso.Draw(Shadow);
+		
+		glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+		glViewport(0, 0, largura, altura);
+
+		callback_CloseWindow(janela);
+		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);		
+		glm::mat4 projection = glm::mat4(1.0f);
+
 		projection = glm::perspective(glm::radians(45.0f), (GLfloat)(largura)/(GLfloat)(altura), 0.01f, 50.0f);
 		
 		Camera viewer = Camera(pos, yaw, pitch);
@@ -91,6 +158,9 @@ int main(void){
         Modellight.setvec3("light.specular", glm::vec3(1.0f, 1.0f, 1.0f));
 		Modellight.setvec3("viewPos", viewer.position);
 		Modellight.setfloat("material.shininess", 32);
+		Modellight.setmat4("lightSpaceMatrix", lightSpaceMatrix);
+
+		glBindTexture(GL_TEXTURE_2D, depthMap);
 
 		parede.Draw(Modellight);
 
@@ -100,11 +170,15 @@ int main(void){
 		model = glm::scale(model, glm::vec3(0.5, 0.5, 0.5));
 		Modellight.setmat4("model", model);
 
+		glBindTexture(GL_TEXTURE_2D, depthMap);
+
 		lixo.Draw(Modellight);
 
 		model = glm::mat4(1.0f);
 		model = glm::translate(model, glm::vec3(0.0f, 0.0f, -1.5f));
 		Modellight.setmat4("model", model);
+
+		glBindTexture(GL_TEXTURE_2D, depthMap);
 
 		piso.Draw(Modellight);
 
@@ -112,6 +186,7 @@ int main(void){
 		glfwPollEvents();
 	}
 
+	Shadow.nope();
 	Modellight.nope();
 	glfwTerminate();
 }
