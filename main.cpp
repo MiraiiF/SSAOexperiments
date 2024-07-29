@@ -49,7 +49,6 @@ int main(void){
 
 	Shader Modellight("../Shaders/AssimpExample.vert", "../Shaders/AssimpExample.frag");
 	Shader Shadow("../Shaders/Shadow.vert", "../Shaders/Shadow.frag");
-	Shader quadBuffer("../Shaders/quadBuffer.vert", "../Shaders/quadBuffer.frag");
 	glEnable(GL_DEPTH_TEST);
 
 	float angle = 0.0f;
@@ -82,8 +81,8 @@ int main(void){
 	float near_plane = 0.1f, far_plane = 50.0f;
 	glm::mat4 lightProjection = glm::ortho(-35.0f, 35.0f, -35.0f, 35.0f, near_plane, far_plane);
 
-	Camera dir_light(glm::vec3( -0.2f, -1.0f, -0.3f) + glm::vec3(+0.5f, 4.0f, -0.3f), 
-					glm::vec3(+0.5f, 4.0f, -0.3f));
+	Camera dir_light(glm::vec3(0.0f, 0.0f, -3.0f), 
+					glm::vec3(1.0f, 4.0f, 0.0f));
 	
 	glm::mat4 lightView = dir_light.view;
 
@@ -93,68 +92,13 @@ int main(void){
 	Model lixo("../models/lixo/lixo.obj");
 	Model piso("../models/piso/piso.obj");
 
-	glm::vec3 pos = glm::vec3(0.0f, 0.0f, 2.0f);
+	glm::vec3 pos = glm::vec3(0.0f, 1.0f, 5.0f);
 	glm::vec4 color;
 
 	unsigned int VAOteapot, VBOteapot;
 	glGenVertexArrays(1, &VAOteapot);
 	glGenBuffers(1, &VBOteapot);
 	glBindVertexArray(VAOteapot);
-
-	float TeapotArray[] = {
-		-0.5f, -0.5f, -0.5f,  0.0f,  0.0f, -1.0f,  0.0f,  0.0f,
-         0.5f, -0.5f, -0.5f,  0.0f,  0.0f, -1.0f,  1.0f,  0.0f,
-         0.5f,  0.5f, -0.5f,  0.0f,  0.0f, -1.0f,  1.0f,  1.0f,
-         0.5f,  0.5f, -0.5f,  0.0f,  0.0f, -1.0f,  1.0f,  1.0f,
-        -0.5f,  0.5f, -0.5f,  0.0f,  0.0f, -1.0f,  0.0f,  1.0f,
-        -0.5f, -0.5f, -0.5f,  0.0f,  0.0f, -1.0f,  0.0f,  0.0f,
-
-        -0.5f, -0.5f,  0.5f,  0.0f,  0.0f,  1.0f,  0.0f,  0.0f,
-         0.5f, -0.5f,  0.5f,  0.0f,  0.0f,  1.0f,  1.0f,  0.0f,
-         0.5f,  0.5f,  0.5f,  0.0f,  0.0f,  1.0f,  1.0f,  1.0f,
-         0.5f,  0.5f,  0.5f,  0.0f,  0.0f,  1.0f,  1.0f,  1.0f,
-        -0.5f,  0.5f,  0.5f,  0.0f,  0.0f,  1.0f,  0.0f,  1.0f,
-        -0.5f, -0.5f,  0.5f,  0.0f,  0.0f,  1.0f,  0.0f,  0.0f,
-
-        -0.5f,  0.5f,  0.5f, -1.0f,  0.0f,  0.0f,  1.0f,  0.0f,
-        -0.5f,  0.5f, -0.5f, -1.0f,  0.0f,  0.0f,  1.0f,  1.0f,
-        -0.5f, -0.5f, -0.5f, -1.0f,  0.0f,  0.0f,  0.0f,  1.0f,
-        -0.5f, -0.5f, -0.5f, -1.0f,  0.0f,  0.0f,  0.0f,  1.0f,
-        -0.5f, -0.5f,  0.5f, -1.0f,  0.0f,  0.0f,  0.0f,  0.0f,
-        -0.5f,  0.5f,  0.5f, -1.0f,  0.0f,  0.0f,  1.0f,  0.0f,
-
-         0.5f,  0.5f,  0.5f,  1.0f,  0.0f,  0.0f,  1.0f,  0.0f,
-         0.5f,  0.5f, -0.5f,  1.0f,  0.0f,  0.0f,  1.0f,  1.0f,
-         0.5f, -0.5f, -0.5f,  1.0f,  0.0f,  0.0f,  0.0f,  1.0f,
-         0.5f, -0.5f, -0.5f,  1.0f,  0.0f,  0.0f,  0.0f,  1.0f,
-         0.5f, -0.5f,  0.5f,  1.0f,  0.0f,  0.0f,  0.0f,  0.0f,
-         0.5f,  0.5f,  0.5f,  1.0f,  0.0f,  0.0f,  1.0f,  0.0f,
-
-        -0.5f, -0.5f, -0.5f,  0.0f, -1.0f,  0.0f,  0.0f,  1.0f,
-         0.5f, -0.5f, -0.5f,  0.0f, -1.0f,  0.0f,  1.0f,  1.0f,
-         0.5f, -0.5f,  0.5f,  0.0f, -1.0f,  0.0f,  1.0f,  0.0f,
-         0.5f, -0.5f,  0.5f,  0.0f, -1.0f,  0.0f,  1.0f,  0.0f,
-        -0.5f, -0.5f,  0.5f,  0.0f, -1.0f,  0.0f,  0.0f,  0.0f,
-        -0.5f, -0.5f, -0.5f,  0.0f, -1.0f,  0.0f,  0.0f,  1.0f,
-
-        -0.5f,  0.5f, -0.5f,  0.0f,  1.0f,  0.0f,  0.0f,  1.0f,
-         0.5f,  0.5f, -0.5f,  0.0f,  1.0f,  0.0f,  1.0f,  1.0f,
-         0.5f,  0.5f,  0.5f,  0.0f,  1.0f,  0.0f,  1.0f,  0.0f,
-         0.5f,  0.5f,  0.5f,  0.0f,  1.0f,  0.0f,  1.0f,  0.0f,
-        -0.5f,  0.5f,  0.5f,  0.0f,  1.0f,  0.0f,  0.0f,  0.0f,
-        -0.5f,  0.5f, -0.5f,  0.0f,  1.0f,  0.0f,  0.0f,  1.0f
-	};
-
-	glBindBuffer(GL_ARRAY_BUFFER, VBOteapot);
-	glBufferData(GL_ARRAY_BUFFER, sizeof(TeapotArray), TeapotArray, GL_STATIC_DRAW);
-	glEnableVertexAttribArray(0);
-	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8*sizeof(GL_FLOAT), (void*)0);	
-	glEnableVertexAttribArray(1);
-	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 8*sizeof(GL_FLOAT), (void*)(3*sizeof(GL_FLOAT)));
-	glEnableVertexAttribArray(1);
-	glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 8*sizeof(GL_FLOAT), (void*)(6*sizeof(GL_FLOAT)));
-	glBindVertexArray(0);
-
 
 	while (!glfwWindowShouldClose(janela))
 	{
@@ -204,18 +148,6 @@ int main(void){
 		float velocity = 5*(glfwGetTime() - time);
 		time = glfwGetTime();
 		camera_movement(janela, velocity, viewer, &pos);
-
-		model = glm::mat4(1.0f);
-		model = glm::translate(model, glm::vec3(1.0f, 1.0f, 1.0f));
-
-		quadBuffer.use();
-		quadBuffer.setmat4("projection", projection);
-		quadBuffer.setmat4("view", viewer.view);
-		quadBuffer.setmat4("model", model);
-		glBindTexture(GL_TEXTURE_2D, depthMap);
-		glBindVertexArray(VAOteapot);
-		glDrawArrays(GL_TRIANGLES, 0, 36);
-		glBindVertexArray(0);
 		
 		model = glm::mat4(1.0f);
 		model = glm::translate(model, glm::vec3(0.0f, 0.0f, -3.0f));
@@ -233,7 +165,9 @@ int main(void){
 		Modellight.setfloat("material.shininess", 32);
 		Modellight.setmat4("lightSpaceMatrix", lightSpaceMatrix);
 
+		glActiveTexture(GL_TEXTURE8);
 		glBindTexture(GL_TEXTURE_2D, depthMap);
+		Modellight.setint("shadowMap", 8);
 
 		parede.Draw(Modellight);
 
@@ -243,15 +177,11 @@ int main(void){
 		model = glm::scale(model, glm::vec3(0.5, 0.5, 0.5));
 		Modellight.setmat4("model", model);
 
-		glBindTexture(GL_TEXTURE_2D, depthMap);
-
 		lixo.Draw(Modellight);
 
 		model = glm::mat4(1.0f);
 		model = glm::translate(model, glm::vec3(0.0f, 0.0f, -1.5f));
 		Modellight.setmat4("model", model);
-
-		glBindTexture(GL_TEXTURE_2D, depthMap);
 
 		piso.Draw(Modellight);
 
