@@ -60,7 +60,7 @@ int main(void){
 	unsigned int depthMapFBO;
 	glGenFramebuffers(1, &depthMapFBO);
 
-	const unsigned int SHADOW_WIDTH = 1024, SHADOW_HEIGHT = 1024;
+	const unsigned int SHADOW_WIDTH = 2048, SHADOW_HEIGHT = 2048;
 
 	unsigned int depthMap;
 	glGenTextures(1, &depthMap);
@@ -78,11 +78,11 @@ int main(void){
 	glReadBuffer(GL_NONE);
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);  
 
-	float near_plane = 0.1f, far_plane = 50.0f;
-	glm::mat4 lightProjection = glm::ortho(-35.0f, 35.0f, -35.0f, 35.0f, near_plane, far_plane);
+	float near_plane = 0.1f, far_plane = 7.5f;
+	glm::mat4 lightProjection = glm::ortho(-10.0f, 10.0f, -10.0f, 10.0f, near_plane, far_plane);
 
-	Camera dir_light(glm::vec3(0.0f, 0.0f, -3.0f), 
-					glm::vec3(1.0f, 4.0f, 0.0f));
+	Camera dir_light(glm::vec3(1.0f, 1.0f, -1.5f), 
+					glm::vec3(1.0f, 4.0f, 2.0f));
 	
 	glm::mat4 lightView = dir_light.view;
 
@@ -104,6 +104,7 @@ int main(void){
 	{
 		
 		//Render Scene from Light Pespective
+		glCullFace(GL_FRONT);
 		Shadow.use();
 		Shadow.setmat4("lightSpaceMatrix", lightSpaceMatrix);
 		
@@ -134,6 +135,8 @@ int main(void){
 		piso.Draw(Shadow);
 		
 		glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+		glCullFace(GL_BACK);
 
 		glViewport(0, 0, largura, altura);
 
