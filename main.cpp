@@ -176,7 +176,9 @@ int main(void){
 
 	while (!glfwWindowShouldClose(janela))
 	{
-		
+		callback_CloseWindow(janela);
+
+		glCullFace(GL_FRONT);
 		//Render Scene from Light Pespective
 		Shadow.use();
 		Shadow.setmat4("lightSpaceMatrix", lightSpaceMatrix);
@@ -207,7 +209,8 @@ int main(void){
 		Shadow.setmat4("model", model);
 		piso.Draw(Shadow);
 		
-		glBindFramebuffer(GL_FRAMEBUFFER, 0);
+		glBindFramebuffer(GL_FRAMEBUFFER, gBuffer);
+		glCullFace(GL_BACK);
 
 		glViewport(0, 0, largura, altura);
 		glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
@@ -264,9 +267,9 @@ int main(void){
 		lDeferred.setvec3("viewPos", viewer.position);
 		lDeferred.setmat4("lightSpaceMatrix", lightSpaceMatrix);
 
-		glActiveTexture(GL_TEXTURE8);
+		glActiveTexture(GL_TEXTURE3);
 		glBindTexture(GL_TEXTURE_2D, depthMap);
-		Modellight.setint("shadowMap", 8);
+		Modellight.setint("shadowMap", 3);
 
 
 		glBindVertexArray(VAO);
