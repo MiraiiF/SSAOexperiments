@@ -174,10 +174,10 @@ int main(void){
         std::cout << "Falta algo ao framebuffer" << std::endl;
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
-	while (!glfwWindowShouldClose(janela)){
-		callback_CloseWindow(janela);
-
-		glCullFace(GL_FRONT);
+	while (!glfwWindowShouldClose(janela))
+	{
+		
+		//Render Scene from Light Pespective
 		Shadow.use();
 		Shadow.setmat4("lightSpaceMatrix", lightSpaceMatrix);
 		
@@ -206,10 +206,8 @@ int main(void){
 
 		Shadow.setmat4("model", model);
 		piso.Draw(Shadow);
-
-		glBindFramebuffer(GL_FRAMEBUFFER, gBuffer);
-
-		glCullFace(GL_BACK);
+		
+		glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
 		glViewport(0, 0, largura, altura);
 		glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
