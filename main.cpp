@@ -47,8 +47,46 @@ int main(void){
 	glfwSetCursorPosCallback(janela, callback_cursor);
 	glfwSetInputMode(janela, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
 
+	float vertices[] = {
+        // positions          // colors           // texture coords
+         1.0f,  1.0f, 0.0f,   1.0f, 0.0f, 0.0f,   1.0f, 1.0f, // top right
+         1.0f, -1.0f, 0.0f,   0.0f, 1.0f, 0.0f,   1.0f, 0.0f, // bottom right
+        -1.0f, -1.0f, 0.0f,   0.0f, 0.0f, 1.0f,   0.0f, 0.0f, // bottom left
+        -1.0f,  1.0f, 0.0f,   1.0f, 1.0f, 0.0f,   0.0f, 1.0f  // top left 
+    };
+    unsigned int indices[] = {
+        0, 1, 3, // first triangle
+        1, 2, 3  // second triangle
+    };
+    unsigned int VBO, VAO, EBO;
+    glGenVertexArrays(1, &VAO);
+    glGenBuffers(1, &VBO);
+    glGenBuffers(1, &EBO);
+
+    glBindVertexArray(VAO);
+
+    glBindBuffer(GL_ARRAY_BUFFER, VBO);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
+
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
+
+    // position attribute
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)0);
+    glEnableVertexAttribArray(0);
+    // color attribute
+    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(3 * sizeof(float)));
+    glEnableVertexAttribArray(1);
+    // texture coord attribute
+    glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(6 * sizeof(float)));
+    glEnableVertexAttribArray(2);
+
+	glBindVertexArray(0);
+
 	Shader Modellight("../Shaders/AssimpExample.vert", "../Shaders/AssimpExample.frag");
 	Shader Shadow("../Shaders/Shadow.vert", "../Shaders/Shadow.frag");
+	Shader gDeferred("../Shaders/gDeferred.vert", "../Shaders/gDeferred.frag");
+	Shader lDeferred("../Shaders/lDeferred.vert", "../Shaders/lDeferred.frag");
 	glEnable(GL_DEPTH_TEST);
 
 	float angle = 0.0f;
@@ -60,7 +98,7 @@ int main(void){
 	unsigned int depthMapFBO;
 	glGenFramebuffers(1, &depthMapFBO);
 
-	const unsigned int SHADOW_WIDTH = 1024, SHADOW_HEIGHT = 1024;
+	const unsigned int SHADOW_WIDTH = 2048, SHADOW_HEIGHT = 2048;
 
 	unsigned int depthMap;
 	glGenTextures(1, &depthMap);
@@ -78,11 +116,11 @@ int main(void){
 	glReadBuffer(GL_NONE);
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);  
 
-	float near_plane = 0.1f, far_plane = 50.0f;
-	glm::mat4 lightProjection = glm::ortho(-35.0f, 35.0f, -35.0f, 35.0f, near_plane, far_plane);
+	float near_plane = 0.1f, far_plane = 7.5f;
+	glm::mat4 lightProjection = glm::ortho(-10.0f, 10.0f, -10.0f, 10.0f, near_plane, far_plane);
 
-	Camera dir_light(glm::vec3(0.0f, 0.0f, -3.0f), 
-					glm::vec3(1.0f, 4.0f, 0.0f));
+	Camera dir_light(glm::vec3(1.0f, 1.0f, -1.5f), 
+					glm::vec3(1.0f, 4.0f, 2.0f));
 	
 	glm::mat4 lightView = dir_light.view;
 
@@ -95,15 +133,51 @@ int main(void){
 	glm::vec3 pos = glm::vec3(0.0f, 1.0f, 5.0f);
 	glm::vec4 color;
 
-	unsigned int VAOteapot, VBOteapot;
-	glGenVertexArrays(1, &VAOteapot);
-	glGenBuffers(1, &VBOteapot);
-	glBindVertexArray(VAOteapot);
+	//deferred shading
 
-	while (!glfwWindowShouldClose(janela))
-	{
-		
-		//Render Scene from Light Pespective
+	unsigned int gBuffer;
+	glGenFramebuffers(1, &gBuffer);
+	glBindFramebuffer(GL_FRAMEBUFFER, gBuffer);
+	unsigned int gPosition, gNormal, gAlbedoSpec;
+	
+	glGenTextures(1, &gPosition);
+	glBindTexture(GL_TEXTURE_2D, gPosition);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16F, largura, altura, 0, GL_RGBA, GL_FLOAT, NULL);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, gPosition, 0);
+	
+	glGenTextures(1, &gNormal);
+	glBindTexture(GL_TEXTURE_2D, gNormal);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16F, largura, altura, 0, GL_RGBA, GL_FLOAT, NULL);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT1, GL_TEXTURE_2D, gNormal, 0);
+	
+	glGenTextures(1, &gAlbedoSpec);
+	glBindTexture(GL_TEXTURE_2D, gAlbedoSpec);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, largura, altura, 0, GL_RGBA, GL_UNSIGNED_BYTE, NULL);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT2, GL_TEXTURE_2D, gAlbedoSpec, 0);
+	
+	unsigned int attachments[3] = { GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1, GL_COLOR_ATTACHMENT2 };
+	glDrawBuffers(3, attachments);
+
+	unsigned int rboDepth;
+    glGenRenderbuffers(1, &rboDepth);
+    glBindRenderbuffer(GL_RENDERBUFFER, rboDepth);
+    glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT, largura, altura);
+    glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, rboDepth);
+
+    if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
+        std::cout << "Falta algo ao framebuffer" << std::endl;
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+	while (!glfwWindowShouldClose(janela)){
+		callback_CloseWindow(janela);
+
+		glCullFace(GL_FRONT);
 		Shadow.use();
 		Shadow.setmat4("lightSpaceMatrix", lightSpaceMatrix);
 		
@@ -132,63 +206,81 @@ int main(void){
 
 		Shadow.setmat4("model", model);
 		piso.Draw(Shadow);
-		
-		glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+		glBindFramebuffer(GL_FRAMEBUFFER, gBuffer);
+
+		glCullFace(GL_BACK);
 
 		glViewport(0, 0, largura, altura);
+		glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
+		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+		gDeferred.use();
 
-		callback_CloseWindow(janela);
-		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);		
 		glm::mat4 projection = glm::mat4(1.0f);
-
 		projection = glm::perspective(glm::radians(45.0f), (GLfloat)(largura)/(GLfloat)(altura), 0.01f, 50.0f);
-		
-		Camera viewer = Camera(pos, yaw, pitch);
+		gDeferred.setmat4("projection", projection);
 
+		Camera viewer = Camera(pos, yaw, pitch);
 		float velocity = 5*(glfwGetTime() - time);
 		time = glfwGetTime();
 		camera_movement(janela, velocity, viewer, &pos);
-		
+		gDeferred.setmat4("view", viewer.view);
+
 		model = glm::mat4(1.0f);
 		model = glm::translate(model, glm::vec3(0.0f, 0.0f, -3.0f));
 		model = glm::scale(model, glm::vec3(1.0, 1.0, 1.0));
-
-		Modellight.use();
-		Modellight.setmat4("projection", projection);
-		Modellight.setmat4("view", viewer.view);
-		Modellight.setmat4("model", model);
-		Modellight.setvec3("light.direction", glm::vec3(-0.2f, -1.0f, -0.3f));
-		Modellight.setvec3("light.ambient", glm::vec3(0.05f, 0.05f, 0.05f));
-        Modellight.setvec3("light.diffuse", glm::vec3(0.8f, 0.8f, 0.8f));
-        Modellight.setvec3("light.specular", glm::vec3(1.0f, 1.0f, 1.0f));
-		Modellight.setvec3("viewPos", viewer.position);
-		Modellight.setfloat("material.shininess", 32);
-		Modellight.setmat4("lightSpaceMatrix", lightSpaceMatrix);
-
-		glActiveTexture(GL_TEXTURE8);
-		glBindTexture(GL_TEXTURE_2D, depthMap);
-		Modellight.setint("shadowMap", 8);
-
-		parede.Draw(Modellight);
+		gDeferred.setmat4("model", model);
+		parede.Draw(gDeferred);
 
 		model = glm::mat4(1.0f);
 		model = glm::translate(model, glm::vec3(0.0f, 0.0f, -1.5f));
 		model = glm::rotate(model, glm::radians(270.0f), glm::vec3(0.0f, 1.0f, 0.0f));
 		model = glm::scale(model, glm::vec3(0.5, 0.5, 0.5));
-		Modellight.setmat4("model", model);
-
-		lixo.Draw(Modellight);
+		gDeferred.setmat4("model", model);
+		lixo.Draw(gDeferred);
 
 		model = glm::mat4(1.0f);
 		model = glm::translate(model, glm::vec3(0.0f, 0.0f, -1.5f));
-		Modellight.setmat4("model", model);
+		gDeferred.setmat4("model", model);
+		piso.Draw(gDeferred);
 
-		piso.Draw(Modellight);
+
+		glBindFramebuffer(GL_FRAMEBUFFER, 0);
+		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+		lDeferred.use();
+		glActiveTexture(GL_TEXTURE0);
+		glBindTexture(GL_TEXTURE_2D, gPosition);
+		glActiveTexture(GL_TEXTURE1);
+		glBindTexture(GL_TEXTURE_2D, gNormal);
+		glActiveTexture(GL_TEXTURE2);
+		glBindTexture(GL_TEXTURE_2D, gAlbedoSpec);
+		lDeferred.setint("gPosition", 0);
+		lDeferred.setint("gNormal", 1);
+		lDeferred.setint("gAlbedoSpec", 2);
+
+		lDeferred.setvec3("light.direction", glm::vec3(-0.2f, -1.0f, -0.3f));
+		lDeferred.setvec3("light.ambient", glm::vec3(0.05f, 0.05f, 0.05f));
+        lDeferred.setvec3("light.diffuse", glm::vec3(0.8f, 0.8f, 0.8f));
+        lDeferred.setvec3("light.specular", glm::vec3(1.0f, 1.0f, 1.0f));
+		Modellight.setfloat("material.shininess", 32);
+		lDeferred.setvec3("viewPos", viewer.position);
+		lDeferred.setmat4("lightSpaceMatrix", lightSpaceMatrix);
+
+		glActiveTexture(GL_TEXTURE8);
+		glBindTexture(GL_TEXTURE_2D, depthMap);
+		Modellight.setint("shadowMap", 8);
+
+
+		glBindVertexArray(VAO);
+        glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
+		glBindVertexArray(0);
+
 
 		glfwSwapBuffers(janela);
 		glfwPollEvents();
 	}
 
+	gDeferred.nope();
 	Shadow.nope();
 	Modellight.nope();
 	glfwTerminate();
