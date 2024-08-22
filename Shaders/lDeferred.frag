@@ -58,30 +58,30 @@ uniform Material material;
 
 uniform sampler2D shadowMap;
 
-vec3 CalcDirLight(DirLight light, vec3 normal, vec3 viewDir, float s);
-vec3 CalcPointLight(PointLight light, vec3 normal, vec3 fragPos, vec3 viewDir);
-vec3 CalcSpotLight(SpotLight light, vec3 normal, vec3 fragPos, vec3 viewDir);
+vec3 CalcDirLight(DirLight light, vec3 normal, vec3 viewDir, float s, vec3 Albedo, float Specular);
+vec3 CalcPointLight(PointLight light, vec3 normal, vec3 fragPos, vec3 viewDir, vec3 Albedo, float Specular);
+vec3 CalcSpotLight(SpotLight light, vec3 normal, vec3 fragPos, vec3 viewDir, vec3 Albedo, float Specular);
 float ShadowCalculation(vec4 fragPosLightSpace);
 
-// retrieve data from G-buffer
-vec3 FragPos = texture(gPosition, texcoords).rgb;
-vec3 Normal = texture(gNormal, texcoords).rgb;
-vec3 Albedo = texture(gAlbedoSpec, texcoords).rgb;
-float Specular = texture(gAlbedoSpec, texcoords).a;
-vec4 FragPosLightSpace = lightSpaceMatrix * vec4(FragPos, 1.0);
-
 void main(){             
+    // retrieve data from G-buffer
+    vec3 FragPos = texture(gPosition, texcoords).rgb;
+    vec3 Normal = texture(gNormal, texcoords).rgb;
+    vec3 Albedo = texture(gAlbedoSpec, texcoords).rgb;
+    float Specular = texture(gAlbedoSpec, texcoords).a;
+    vec4 FragPosLightSpace = lightSpaceMatrix * vec4(FragPos, 1.0);
+
     vec3 norm = normalize(Normal);
     vec3 viewDir = normalize(viewPos - FragPos);
     
     float shadow = ShadowCalculation(FragPosLightSpace);
 
-    vec3 result = CalcDirLight(light, norm, viewDir, shadow);   
+    vec3 result = CalcDirLight(light, norm, viewDir, shadow, Albedo, Specular);   
 
     FragColor = vec4(result, 1.0);
 }  
 
-vec3 CalcDirLight(DirLight light, vec3 normal, vec3 viewDir, float s)
+vec3 CalcDirLight(DirLight light, vec3 normal, vec3 viewDir, float s, vec3 Albedo, float Specular)
 {
     vec3 lightDir = normalize(-light.direction);
     // diffuse shading
@@ -102,7 +102,7 @@ vec3 CalcDirLight(DirLight light, vec3 normal, vec3 viewDir, float s)
 }
 
 // calculates the color when using a point light.
-vec3 CalcPointLight(PointLight light, vec3 normal, vec3 fragPos, vec3 viewDir)
+vec3 CalcPointLight(PointLight light, vec3 normal, vec3 fragPos, vec3 viewDir, vec3 Albedo, float Specular)
 {
     vec3 lightDir = normalize(light.position - fragPos);
     // diffuse shading
@@ -129,7 +129,7 @@ vec3 CalcPointLight(PointLight light, vec3 normal, vec3 fragPos, vec3 viewDir)
 }
 
 // calculates the color when using a spot light.
-vec3 CalcSpotLight(SpotLight light, vec3 normal, vec3 fragPos, vec3 viewDir)
+vec3 CalcSpotLight(SpotLight light, vec3 normal, vec3 fragPos, vec3 viewDir, vec3 Albedo, float Specular)
 {
     vec3 lightDir = normalize(light.position - fragPos);
     // diffuse shading
