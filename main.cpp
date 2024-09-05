@@ -16,6 +16,9 @@ void processInput(GLFWwindow *window);
 unsigned int loadTexture(const char *path, bool gammaCorrection);
 void renderQuad();
 void renderCube();
+void mouse_button_callback(GLFWwindow* window, int button, int action, int mods);
+
+int ssaoEnabled = 1;
 
 // settings
 const unsigned int SCR_WIDTH = 1280;
@@ -62,6 +65,7 @@ int main()
     glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
     glfwSetCursorPosCallback(window, mouse_callback);
     glfwSetScrollCallback(window, scroll_callback);
+    glfwSetMouseButtonCallback(window, mouse_button_callback);
 
     // tell GLFW to capture our mouse
     glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
@@ -320,6 +324,7 @@ int main()
         const float quadratic = 0.032f;
         shaderLightingPass.setfloat("light.Linear", linear);
         shaderLightingPass.setfloat("light.Quadratic", quadratic);
+        shaderLightingPass.setint("ssaoEnabled", ssaoEnabled);
         glActiveTexture(GL_TEXTURE0);
         glBindTexture(GL_TEXTURE_2D, gPosition);
         glActiveTexture(GL_TEXTURE1);
@@ -505,4 +510,10 @@ void mouse_callback(GLFWwindow* window, double xposIn, double yposIn)
 void scroll_callback(GLFWwindow* window, double xoffset, double yoffset)
 {
     camera.ProcessMouseScroll(static_cast<float>(yoffset));
+}
+
+void mouse_button_callback(GLFWwindow* window, int button, int action, int mods) {
+    if (button == GLFW_MOUSE_BUTTON_LEFT && action == GLFW_PRESS) {
+        ssaoEnabled = 1 - ssaoEnabled;
+    }
 }

@@ -8,6 +8,8 @@ uniform sampler2D gNormal;
 uniform sampler2D gAlbedo;
 uniform sampler2D ssao;
 
+uniform int ssaoEnabled;
+
 struct Light {
     vec3 Position;
     vec3 Color;
@@ -23,7 +25,12 @@ void main()
     vec3 FragPos = texture(gPosition, TexCoords).rgb;
     vec3 Normal = texture(gNormal, TexCoords).rgb;
     vec3 Diffuse = texture(gAlbedo, TexCoords).rgb;
-    float AmbientOcclusion = texture(ssao, TexCoords).r;
+    float AmbientOcclusion = 1.0;
+    if(ssaoEnabled == 1){
+        AmbientOcclusion = texture(ssao, TexCoords).r;
+    }else{
+        AmbientOcclusion = 1.0;
+    }
     
     // then calculate lighting as usual
     vec3 ambient = vec3(0.3 * Diffuse * AmbientOcclusion);
